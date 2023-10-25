@@ -1,0 +1,2 @@
+class AbsoluteSolutionFoundException(Exception):
+    pass

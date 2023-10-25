@@ -8,8 +8,8 @@ class Chromosome():
 
     def __str__(self) -> str:
         return "[" \
-            + str.join(str(self.get_gene[i]) + ("," if i != n - 1 else "") for i in range(n)) \
+            + "".join([(", " if i != 0 else "") + str(gene) for i, gene in enumerate(self._genes)]) \
             + "]"
 
     def get_gene(self, i: int):
-        return _genes[i]
+        return self._genes[i]

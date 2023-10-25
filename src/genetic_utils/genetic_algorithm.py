@@ -1,7 +1,7 @@
 from typing import Callable, Iterable, List
 from .chromosome import Chromosome
 from .gene import Gene
-from .utils import custom_sorted
+from .utils import custom_sorted, show_time, AbsoluteSolutionFoundException
 from random import uniform, random, choices, binomialvariate
 
 class GeneticAlgorithm:
@@ -16,7 +16,9 @@ class GeneticAlgorithm:
             not_mutated_count: int,
             crossover_probability: float,
             crossover_function: Callable[[Chromosome, Chromosome], [Chromosome, Chromosome]],
-            evaluation_function: Callable[[Chromosome], float]):
+            evaluation_function: Callable[[Chromosome], float],
+            get_probabilities: Callable[[List[Chromosome]], float],
+            is_absolute_solution_found: Callable[[List[Chromosome]], bool]):
         self.gene_interval = gene_interval
         self.chromosome_length = chromosome_length
         self.population_length = population_length
@@ -27,11 +29,18 @@ class GeneticAlgorithm:
         self.crossover_probability = crossover_probability
         self.crossover_function = crossover_function
         self.evaluation_function = evaluation_function
+        self.get_probabilities = get_probabilities
+        self.is_absolute_solution_found = is_absolute_solution_found
 
+    @show_time
     def do_cycle(self):
+        if self.is_absolute_solution_found(self.population):
+            raise AbsoluteSolutionFoundException
         parents = self.do_selection()
         successors = self.do_crossover(parents)
         self.population = self.do_mutation(successors)
+        print(f"best chromosome: {self.get_best()}")
+        return self.get_best()
 
     # done
     def do_mutation(self, successors: Iterable[Chromosome]) -> List[Chromosome]:
@@ -71,10 +80,10 @@ class GeneticAlgorithm:
         
         successors = []
         prerequisites = []
-        for p in enumerate(parents):
+        for p in parents:
             prerequisites.append(p)
             if len(prerequisites) == 2:
-                random_number = random
+                random_number = random()
                 if random_number <= crossover_probability:
                     crossovered = crossover_function(*prerequisites)
                     successors.extend(crossovered)
@@ -88,29 +97,37 @@ class GeneticAlgorithm:
     # done
     def do_selection(self) -> List[Chromosome]:
         population = self.population
+        population_length = self.population_length
         evaluation_function = self.evaluation_function
+        get_probabilities = self.get_probabilities
         
-        weights = [evaluation_function(chromosome) \
-            for chromosome in population]
+        probabilities = get_probabilities(population)
         
         try:
-            parents = choices(population, weights)
+            parents = choices(population, probabilities, k=population_length)
             return parents
         except:
-            raise Exception(message='selection error')
+            pass
 
     # done
     def generate_population(self):
-        self.population = [ \
-            [Gene(uniform(*self.gene_interval)) \
+        new_gene_sequences = [ \
+            [Gene(int(uniform(*self.gene_interval))) \
                 for j in range(self.chromosome_length)] \
                     for i in range(self.population_length)]
+        self.population = [Chromosome(x) for x in new_gene_sequences]
 
     # done
+    @show_time
     def do_cycles(self, cycle_count):
         self.generate_population()
         for i in range(cycle_count):
-            self.do_cycle()
+            try:
+                print(f"cycle {i + 1}: ")
+                self.do_cycle()
+            except AbsoluteSolutionFoundException:
+                print(f"cycle halted: the absolute solution was found: {self.get_best()}")
+                break
     
     # done
     def show_population(self):
@@ -127,7 +144,7 @@ class GeneticAlgorithm:
         best_value = 0
         for chromosome in population:
             value = evaluation_function(chromosome)
-            best, best_value = chromosome, value \
+            best, best_value = (chromosome, value) \
                     if best is None or value > best_value \
-                    else best, best_value
+                    else (best, best_value)
         return best
