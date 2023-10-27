@@ -7,9 +7,9 @@ class Chromosome():
         self._genes = tuple(gene_sequence)
 
     def __str__(self) -> str:
-        return "[" \
+        return "(" \
             + "".join([(", " if i != 0 else "") + str(gene) for i, gene in enumerate(self._genes)]) \
-            + "]"
+            + ")"
 
     def get_gene(self, i: int):
         return self._genes[i]

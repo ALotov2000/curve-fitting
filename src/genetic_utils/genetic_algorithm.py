@@ -33,13 +33,14 @@ class GeneticAlgorithm:
         self.is_absolute_solution_found = is_absolute_solution_found
 
     @show_time
-    def do_cycle(self):
+    def do_cycle(self, do_print: bool=True):
         if self.is_absolute_solution_found(self.population):
             raise AbsoluteSolutionFoundException
         parents = self.do_selection()
         successors = self.do_crossover(parents)
         self.population = self.do_mutation(successors)
-        print(f"best chromosome: {self.get_best()}")
+        if do_print: 
+            print(f"best chromosome: {self.get_best()}")
         return self.get_best()
 
     # done
@@ -119,14 +120,16 @@ class GeneticAlgorithm:
 
     # done
     @show_time
-    def do_cycles(self, cycle_count):
+    def do_cycles(self, cycle_count, do_print:bool = True):
         self.generate_population()
         for i in range(cycle_count):
             try:
-                print(f"cycle {i + 1}: ")
-                self.do_cycle()
+                if do_print:
+                    print(f"cycle {i + 1}: ")
+                self.do_cycle(do_print=do_print)
             except AbsoluteSolutionFoundException:
-                print(f"cycle halted: the absolute solution was found: {self.get_best()}")
+                if do_print:
+                    print(f"cycle halted: the absolute solution was found: {self.get_best()}")
                 break
     
     # done
